@@ -95,6 +95,7 @@ NSString * const NXOAuth2ClientConnectionContextTokenRefresh = @"tokenRefresh";
         tokenType = [aTokenType copy];
         accessToken = anAccessToken;
         
+        self.tokenRequestHTTPMethod = @"POST";
         self.acceptType = @"application/json";
         keyChainGroup = aKeyChainGroup;
         
@@ -313,7 +314,7 @@ NSString * const NXOAuth2ClientConnectionContextTokenRefresh = @"tokenRefresh";
     NSAssert1(!authConnection, @"authConnection already running with: %@", authConnection);
     
     NSMutableURLRequest *tokenRequest = [NSMutableURLRequest requestWithURL:tokenURL];
-    [tokenRequest setHTTPMethod:@"POST"];
+    [tokenRequest setHTTPMethod:self.tokenRequestHTTPMethod];
     [authConnection cancel];  // just to be sure
 
     self.authenticating = YES;
@@ -327,6 +328,12 @@ NSString * const NXOAuth2ClientConnectionContextTokenRefresh = @"tokenRefresh";
                                        nil];
     if (self.desiredScope) {
         [parameters setObject:[[self.desiredScope allObjects] componentsJoinedByString:@" "] forKey:@"scope"];
+    }
+    
+    if (self.customHeaderFields) {
+        [self.customHeaderFields enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSString *obj, BOOL *stop) {
+            [tokenRequest addValue:obj forHTTPHeaderField:key];
+        }];
     }
     
     if (self.additionalAuthenticationParameters) {
@@ -346,7 +353,7 @@ NSString * const NXOAuth2ClientConnectionContextTokenRefresh = @"tokenRefresh";
     NSAssert1(!authConnection, @"authConnection already running with: %@", authConnection);
     
     NSMutableURLRequest *tokenRequest = [NSMutableURLRequest requestWithURL:tokenURL];
-    [tokenRequest setHTTPMethod:@"POST"];
+    [tokenRequest setHTTPMethod:self.tokenRequestHTTPMethod];
     [authConnection cancel];  // just to be sure
     
     self.authenticating = YES;
@@ -359,6 +366,13 @@ NSString * const NXOAuth2ClientConnectionContextTokenRefresh = @"tokenRefresh";
     if (self.desiredScope) {
         [parameters setObject:[[self.desiredScope allObjects] componentsJoinedByString:@" "] forKey:@"scope"];
     }
+    
+    if (self.customHeaderFields) {
+        [self.customHeaderFields enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSString *obj, BOOL *stop) {
+            [tokenRequest addValue:obj forHTTPHeaderField:key];
+        }];
+    }
+    
     authConnection = [[NXOAuth2Connection alloc] initWithRequest:tokenRequest
                                                requestParameters:parameters
                                                      oauthClient:self
@@ -372,7 +386,7 @@ NSString * const NXOAuth2ClientConnectionContextTokenRefresh = @"tokenRefresh";
     NSAssert1(!authConnection, @"authConnection already running with: %@", authConnection);
     
     NSMutableURLRequest *tokenRequest = [NSMutableURLRequest requestWithURL:tokenURL];
-    [tokenRequest setHTTPMethod:@"POST"];
+    [tokenRequest setHTTPMethod:self.tokenRequestHTTPMethod];
     [authConnection cancel];  // just to be sure
 
     self.authenticating = YES;
@@ -392,6 +406,12 @@ NSString * const NXOAuth2ClientConnectionContextTokenRefresh = @"tokenRefresh";
         [parameters addEntriesFromDictionary:self.additionalAuthenticationParameters];
     }
     
+    if (self.customHeaderFields) {
+        [self.customHeaderFields enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSString *obj, BOOL *stop) {
+            [tokenRequest addValue:obj forHTTPHeaderField:key];
+        }];
+    }
+    
     authConnection = [[NXOAuth2Connection alloc] initWithRequest:tokenRequest
                                                requestParameters:parameters
                                                      oauthClient:self
@@ -407,7 +427,7 @@ NSString * const NXOAuth2ClientConnectionContextTokenRefresh = @"tokenRefresh";
     NSParameterAssert(anAssertion);
     
     NSMutableURLRequest *tokenRequest = [NSMutableURLRequest requestWithURL:tokenURL];
-    [tokenRequest setHTTPMethod:@"POST"];
+    [tokenRequest setHTTPMethod:self.tokenRequestHTTPMethod];
     [authConnection cancel];  // just to be sure
     
     self.authenticating = YES;
@@ -431,7 +451,7 @@ NSString * const NXOAuth2ClientConnectionContextTokenRefresh = @"tokenRefresh";
 
 #pragma mark Public
 
-- (void)refreshAccessToken;
+- (void)refreshAccessToken
 {
     [self refreshAccessTokenAndRetryConnection:nil];
 }
@@ -445,7 +465,7 @@ NSString * const NXOAuth2ClientConnectionContextTokenRefresh = @"tokenRefresh";
     if (!authConnection) {
         NSAssert((accessToken.refreshToken != nil), @"invalid state");
         NSMutableURLRequest *tokenRequest = [NSMutableURLRequest requestWithURL:tokenURL];
-        [tokenRequest setHTTPMethod:@"POST"];
+        [tokenRequest setHTTPMethod:self.tokenRequestHTTPMethod];
         [authConnection cancel]; // not needed, but looks more clean to me :)
         
         NSMutableDictionary *parameters = [NSMutableDictionary dictionaryWithObjectsAndKeys:
